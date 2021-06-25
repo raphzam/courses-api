@@ -11,8 +11,25 @@ const courses = [
   { id: 4, name: "course4" },
 ];
 
-app.get("/", (req, res) => {
+function validateCourse(course) {
+  const schema = Joi.object({
+    name: Joi.string().min(3).required(),
+  });
+
+  return schema.validate(course);
+}
+
+app.get("/api/courses", (req, res) => {
   res.send(courses);
+});
+
+app.get("/api/courses/:id", (req, res) => {
+  const course = courses.find((c) => c.id === parseInt(req.params.id));
+  if (!course) {
+    //404 Resource Not Found
+    return res.status(404).send("The course with the given ID was not found");
+  }
+  res.status(200).send(course);
 });
 
 app.post("/api/courses", (req, res) => {
@@ -38,7 +55,7 @@ app.put("/api/courses/:id", (req, res) => {
   const course = courses.find((c) => c.id === parseInt(req.params.id));
   if (!course) {
     //404 Resource Not Found
-    res.status(404).send("The course with the given ID was not found");
+    return res.status(404).send("The course with the given ID was not found");
   }
   //Validate
   const { error } = validateCourse(req.body);
@@ -48,29 +65,25 @@ app.put("/api/courses/:id", (req, res) => {
     res.status(400).send(error.details[0].message);
     return;
   }
-
   //Update course
   course.name = req.body.name;
   //Return the updated course
   res.send(course);
 });
 
-app.get("/api/courses/:id", (req, res) => {
+app.delete("/api/courses/:id", (req, res) => {
   const course = courses.find((c) => c.id === parseInt(req.params.id));
   if (!course) {
-    //404 Resource Not Found
-    res.status(404).send("The course with the given ID was not found");
+    return res.status(404).send("The course with the given ID was not found");
   }
-  res.status(200).send(course);
+
+  //Delete
+  const index = courses.indexOf(course);
+  courses.splice(index, 1);
+
+  //Return the same course
+  res.send(course);
 });
-
-function validateCourse(course) {
-  const schema = Joi.object({
-    name: Joi.string().min(3).required(),
-  });
-
-  return schema.validate(course);
-}
 
 // PORT
 const port = process.env.PORT || 3000;
